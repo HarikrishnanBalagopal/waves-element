@@ -10,8 +10,34 @@ function main()
     img_slack_logo.onload = init;
 }
 
+function peak(uv, pos, size)
+{
+    const dx = uv.x - pos.x, dy = uv.y - pos.y;
+    const d = Math.sqrt(dx * dx + dy * dy);
+    return Math.exp(- size * d);
+}
+
+function calculate_initial_condition(R, C)
+{
+    const arr = new Float32Array(R * C * 2);
+    const peak_pos = {x: 0.5, y: 0.5};
+    const peak_size = 10;
+    for(let r = 1; r < R - 1; r++)
+    {
+        for(let c = 1; c < C - 1; c++)
+        {
+            const i = 2 * (r * C + c);
+            const uv = {x: (c / R), y: (r/ R)};
+            arr[i] = 0; // velocity
+            arr[i + 1] = peak(uv, peak_pos, peak_size); // position
+        }
+    }
+    return arr;
+}
+
 function init() {
     const img_slack_logo = sel('#img-slack-logo');
+    const initial_condition = calculate_initial_condition(256, 256);
     //cout('vertexShaderSource:', vertexShaderSource);
     //cout('fragmentShaderSource:', fragmentShaderSource);
     const canvas = document.querySelector('#webgl-canvas');
@@ -40,9 +66,11 @@ function init() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-    const mipLevel = 0, internalFormat = gl.RGBA, srcFormat = gl.RGBA, srcType = gl.UNSIGNED_BYTE;
-    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, img_slack_logo);
+    //cout(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, initial_condition);
+    const mipLevel = 0, internalFormat = gl.RG32F, texWidth = 256, texHeight = 256, texBorder = 0, srcFormat = gl.RG, srcType = gl.FLOAT;
+    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, texWidth, texHeight, texBorder, srcFormat, srcType, initial_condition);
 
+    // upload rectangle coords.
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     const positions = [
@@ -59,9 +87,13 @@ function init() {
     gl.enableVertexAttribArray(positionAttributeLocation);
     const size = 2, type = gl.FLOAT, normalize = false, stride = 0, offset = 0;
     gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
+
+    // clear viewport
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // render
     gl.useProgram(program);
     gl.bindVertexArray(vao);
     gl.uniform1i(imageLocation, 0);

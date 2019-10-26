@@ -55,14 +55,14 @@ void main()
   uv -= 0.5;
   uv.x *= resolution.x/resolution.y;
 
-  float mask = 0.;
-  mask += smiley(vec2(0.2, 0.), 0.2, uv);
-  mask += smiley(vec2(-0.2, 0.), 0.2, uv);
+  //float mask = 0.;
+  //mask += smiley(vec2(0.2, 0.), 0.2, uv);
+  //mask += smiley(vec2(-0.2, 0.), 0.2, uv);
 
-  vec3 black = vec3(0.);
-  vec3 red = vec3(1., 0., 0.);
-  vec3 col = black;
-  vec3 image = texture(u_image, uv_rainbow.xy).xyz;
-  col = mix(col, image, mask);
-  outColor = vec4(col, 1.);
+  //vec3 black = vec3(0.);
+  //vec3 red = vec3(1., 0., 0.);
+  //vec3 col = black;
+  float image = texture(u_image, uv_rainbow.xy).y;
+  //col = mix(col, image, mask);
+  outColor = vec4(vec3(image), 1.);
 }
