@@ -4,9 +4,16 @@ import fragmentShaderSource from './shaders/fragment-shader.frag';
 const cout = console.log.bind(console);
 const sel = document.querySelector.bind(document);
 
-function main() {
-    cout('vertexShaderSource:', vertexShaderSource);
-    cout('fragmentShaderSource:', fragmentShaderSource);
+function main()
+{
+    const img_slack_logo = sel('#img-slack-logo');
+    img_slack_logo.onload = init;
+}
+
+function init() {
+    const img_slack_logo = sel('#img-slack-logo');
+    //cout('vertexShaderSource:', vertexShaderSource);
+    //cout('fragmentShaderSource:', fragmentShaderSource);
     const canvas = document.querySelector('#webgl-canvas');
     const gl = canvas.getContext('webgl2');
 
@@ -14,10 +21,28 @@ function main() {
         alert('no webgl2 support');
         return;
     }
+
+    // Compile and link shader program.
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     const program = createProgram(gl, vertexShader, fragmentShader);
+
+    // Get locations from shader program.
     const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
+    const imageLocation = gl.getUniformLocation(program, 'u_image');
+
+    // configure texture.
+    const texture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+    const mipLevel = 0, internalFormat = gl.RGBA, srcFormat = gl.RGBA, srcType = gl.UNSIGNED_BYTE;
+    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, srcFormat, srcType, img_slack_logo);
+
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     const positions = [
@@ -39,6 +64,7 @@ function main() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.useProgram(program);
     gl.bindVertexArray(vao);
+    gl.uniform1i(imageLocation, 0);
     const primitiveType = gl.TRIANGLES, offset1 = 0, count1 = 6;
     gl.drawArrays(primitiveType, offset1, count1);
 }

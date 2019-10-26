@@ -2,6 +2,8 @@
 
 precision mediump float;
 
+uniform sampler2D u_image;
+
 out vec4 outColor;
 
 float circle(vec2 center, float radius, vec2 uv)
@@ -60,6 +62,7 @@ void main()
   vec3 black = vec3(0.);
   vec3 red = vec3(1., 0., 0.);
   vec3 col = black;
-  col = mix(col, uv_rainbow, mask);
+  vec3 image = texture(u_image, uv_rainbow.xy).xyz;
+  col = mix(col, image, mask);
   outColor = vec4(col, 1.);
 }
