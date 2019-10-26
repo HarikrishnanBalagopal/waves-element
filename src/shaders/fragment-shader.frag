@@ -32,9 +32,9 @@ void main()
 
     float pos = texelFetch(u_image, center, 0).y;
 
-    //vec3 col = floatToRgb(pos, 256.);
+    // vec3 col = floatToRgb(pos, 256.);
     vec3 col = vec3(sigmoid(pos), sin(pos), cos(pos));
-    //vec3 col = vec3(sigmoid(pos));
+    // vec3 col = vec3(sigmoid(pos));
 
     fragColor = vec4(col, 1.0);
 }

@@ -9,11 +9,11 @@ uniform ivec3 iMouse;
 
 out vec4 fragColor;
 
-#define SPRING_CONSTANT .4
-#define PROP_SPEED .1
+#define SPRING_CONSTANT .04
+#define PROP_SPEED 1.
 #define MASS 10.
 #define FRICTION_COEFF 0.005
-#define PEAK_SIZE .05
+#define PEAK_SIZE .2
 #define MAX_VELOCITY_MAGNITUDE 10.
 #define MAX_DISPLACEMENT 64.
 
@@ -87,8 +87,8 @@ void main()
         force_b = normalize(force_b) * (length(force_b) - 1.) * SPRING_CONSTANT;
 
         // gravity
-        // vec3 force_g = vec3(0.); // ZERO GRAVITY
-        vec3 force_g = vec3(0., 0., -0.001 * MASS); // VERY LOW GRAVITY
+        vec3 force_g = vec3(0.); // ZERO GRAVITY
+        // vec3 force_g = vec3(0., 0., -0.001 * MASS); // VERY LOW GRAVITY
         // vec3 force_g = vec3(0., 0., -1.62 * MASS); // MOON
         // vec3 force_g = vec3(0., 0., -9.807 * MASS); // EARTH
 
