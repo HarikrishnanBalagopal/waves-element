@@ -64,6 +64,7 @@ function init() {
     const positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
     const isVelocityUpdateLocation = gl.getUniformLocation(updateProgram, 'is_velocity_update');
     const updateImageLocation = gl.getUniformLocation(updateProgram, 'i_image');
+    const iTimeDeltaLocation = gl.getUniformLocation(updateProgram, 'iTimeDelta');
     const imageLocation = gl.getUniformLocation(program, 'u_image');
 
     // configure texture 1.
@@ -125,20 +126,22 @@ function init() {
     gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
 
     const args = {
-        gl, program, attachmentPoint, updateProgram, vao, isVelocityUpdateLocation, imageLocation, updateImageLocation, frameBuffer, texture1, texture2
+        gl, program, attachmentPoint, updateProgram, vao, iTimeDeltaLocation, isVelocityUpdateLocation, imageLocation, updateImageLocation, frameBuffer, texture1, texture2, prev: 0
     };
     window.requestAnimationFrame(step.bind(null, args));
 }
 
-function step(args)
+function step(args, timestamp)
 {
     const {
-        gl, program, attachmentPoint, updateProgram, vao, isVelocityUpdateLocation, imageLocation, updateImageLocation, frameBuffer, texture1, texture2
+        gl, program, attachmentPoint, updateProgram, vao, iTimeDeltaLocation, isVelocityUpdateLocation, imageLocation, updateImageLocation, frameBuffer, texture1, texture2, prev
     } = args;
+    const deltaTime = timestamp - prev;
 
     // run the update program for veloctiy update.
     gl.useProgram(updateProgram);
     gl.uniform1i(isVelocityUpdateLocation, 1);
+    gl.uniform1f(iTimeDeltaLocation, deltaTime);
     render(gl, updateProgram, vao, updateImageLocation, 0, frameBuffer);
 
     // swap textures
@@ -163,7 +166,7 @@ function step(args)
     // run render program
     render(gl, program, vao, imageLocation, 0, null);
 
-    window.requestAnimationFrame(step.bind(null, args));
+    window.requestAnimationFrame(step.bind(null, {...args, prev: timestamp}));
 }
 
 function render(gl, program, vao, imageLocation, texture, frameBuffer)
