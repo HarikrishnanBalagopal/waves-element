@@ -65,6 +65,7 @@ function init() {
     const isVelocityUpdateLocation = gl.getUniformLocation(updateProgram, 'is_velocity_update');
     const updateImageLocation = gl.getUniformLocation(updateProgram, 'i_image');
     const iTimeDeltaLocation = gl.getUniformLocation(updateProgram, 'iTimeDelta');
+    const iMouseLocation = gl.getUniformLocation(updateProgram, 'iMouse');
     const imageLocation = gl.getUniformLocation(program, 'u_image');
 
     // configure texture 1.
@@ -125,8 +126,32 @@ function init() {
     const size = 2, type = gl.FLOAT, normalize = false, stride = 0, offset = 0;
     gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
 
+    const mouseData = {mouse_x: 0, mouse_y: 0, mouse_updated: false, is_dragging: false};
+
+    canvas.addEventListener('mousedown', e => {
+        mouseData.is_dragging = true;
+        const rect = e.target.getBoundingClientRect();
+        mouseData.mouse_x = Math.floor(e.clientX - rect.left); //x position within the element.
+        mouseData.mouse_y = Math.floor(rect.bottom - e.clientY);  //y position within the element.
+        mouseData.mouse_updated = true;
+        // cout(mouseData.mouse_x, mouseData.mouse_y, mouseData.mouse_updated);    
+    });
+    canvas.addEventListener('mousemove', e => {
+        if(mouseData.is_dragging)
+        {
+            const rect = e.target.getBoundingClientRect();
+            mouseData.mouse_x = Math.floor(e.clientX - rect.left); //x position within the element.
+            mouseData.mouse_y = Math.floor(rect.bottom - e.clientY);  //y position within the element.
+            mouseData.mouse_updated = true;
+            // cout(mouseData.mouse_x, mouseData.mouse_y, mouseData.mouse_updated);    
+        }
+    });
+    canvas.addEventListener('mouseup', e => {
+        mouseData.is_dragging = false;
+    });
+
     const args = {
-        gl, program, attachmentPoint, updateProgram, vao, iTimeDeltaLocation, isVelocityUpdateLocation, imageLocation, updateImageLocation, frameBuffer, texture1, texture2, prev: 0
+        gl, program, attachmentPoint, updateProgram, vao, iMouseLocation, iTimeDeltaLocation, isVelocityUpdateLocation, imageLocation, updateImageLocation, frameBuffer, texture1, texture2, prev: 0, mouseData
     };
     window.requestAnimationFrame(step.bind(null, args));
 }
@@ -134,7 +159,7 @@ function init() {
 function step(args, timestamp)
 {
     const {
-        gl, program, attachmentPoint, updateProgram, vao, iTimeDeltaLocation, isVelocityUpdateLocation, imageLocation, updateImageLocation, frameBuffer, texture1, texture2, prev
+        gl, program, attachmentPoint, updateProgram, vao, iMouseLocation, iTimeDeltaLocation, isVelocityUpdateLocation, imageLocation, updateImageLocation, frameBuffer, texture1, texture2, prev, mouseData
     } = args;
     const deltaTime = timestamp - prev;
 
@@ -142,6 +167,7 @@ function step(args, timestamp)
     gl.useProgram(updateProgram);
     gl.uniform1i(isVelocityUpdateLocation, 1);
     gl.uniform1f(iTimeDeltaLocation, deltaTime);
+    gl.uniform3i(iMouseLocation, mouseData.mouse_x, mouseData.mouse_y, mouseData.mouse_updated ? 1 : 0);
     render(gl, updateProgram, vao, updateImageLocation, 0, frameBuffer);
 
     // swap textures
@@ -166,6 +192,7 @@ function step(args, timestamp)
     // run render program
     render(gl, program, vao, imageLocation, 0, null);
 
+    mouseData.mouse_updated = false;
     window.requestAnimationFrame(step.bind(null, {...args, prev: timestamp}));
 }
 

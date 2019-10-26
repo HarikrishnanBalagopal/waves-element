@@ -5,21 +5,29 @@ precision mediump float;
 uniform sampler2D i_image;
 uniform bool is_velocity_update;
 uniform float iTimeDelta;
+uniform ivec3 iMouse;
 
 out vec4 fragColor;
+
+#define SPRING_CONSTANT .4
+#define PROP_SPEED .1
+#define MASS 10.
+#define FRICTION_COEFF 0.005
+#define PEAK_SIZE .05
+#define MAX_VELOCITY_MAGNITUDE 10.
+#define MAX_DISPLACEMENT 64.
 
 float sigmoid(float x)
 {
     return 1. / (1. + exp(-x));
 }
 
-#define SPRING_CONSTANT 4.
-#define PROP_SPEED 100.
-#define MASS 1.
-#define FRICTION_COEFF 0.005
-#define PEAK_SIZE .05
-#define MAX_VELOCITY_MAGNITUDE 100.
-#define MAX_DISPLACEMENT 640.
+float peak(ivec2 center, ivec2 pos, float size)
+{
+    float d = length(vec2(center) - vec2(pos));
+    float e = exp(-size * d);
+    return e;
+}
 
 void main()
 {
@@ -79,6 +87,7 @@ void main()
         force_b = normalize(force_b) * (length(force_b) - 1.) * SPRING_CONSTANT;
 
         // gravity
+        // vec3 force_g = vec3(0.); // ZERO GRAVITY
         vec3 force_g = vec3(0., 0., -0.001 * MASS); // VERY LOW GRAVITY
         // vec3 force_g = vec3(0., 0., -1.62 * MASS); // MOON
         // vec3 force_g = vec3(0., 0., -9.807 * MASS); // EARTH
@@ -105,8 +114,9 @@ void main()
         pos_c = pos_c + vel * iTimeDelta * PROP_SPEED;
 
         // if LMB is down insert a peak at the click position.
-        //ivec2 click = ivec2(iMouse.xy);
-        //if(iMouse.z > 0.)pos_c += 10. * peak(center, click, PEAK_SIZE);
+        ivec2 click = iMouse.xy;
+        if(iMouse.z == 1)pos_c += 10. * peak(center, click, PEAK_SIZE);
+        // pos_c = 0.;
 
         // clamp the position.
         pos_c = clamp(pos_c, -MAX_DISPLACEMENT, MAX_DISPLACEMENT);
@@ -133,12 +143,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 */
 
 /*
-float peak(ivec2 center, ivec2 pos, float size)
-{
-    float d = length(vec2(center) - vec2(pos));
-    float e = exp(-size * d);
-    return e;
-}
+
 
 void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {

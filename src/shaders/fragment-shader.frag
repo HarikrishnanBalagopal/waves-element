@@ -4,65 +4,37 @@ precision mediump float;
 
 uniform sampler2D u_image;
 
-out vec4 outColor;
+out vec4 fragColor;
 
-float circle(vec2 center, float radius, vec2 uv)
+float sigmoid(float x)
 {
-  float d = length(uv - center);
-  return smoothstep(radius, radius - 0.01, d);
-}
-
-float sat(float x)
-{
-  return clamp(x, 0., 1.);
-}
-vec2 sat(vec2 x)
-{
-  return clamp(x, 0., 1.);
-}
-vec3 sat(vec3 x)
-{
-  return clamp(x, 0., 1.);
+    return 1. / (1. + exp(-x));
 }
 
-float mouth(vec2 center, float radius, vec2 uv)
-{
-  float mask = 0.;
-  uv -= center;
-  mask += circle(vec2(0.), radius, uv);
-  mask -= circle(vec2(0., 0.1 * radius), radius, uv);
-  return sat(mask);
-}
-
-float smiley(vec2 center, float size, vec2 uv)
-{
-  float mask = 0.;
-  uv -= center;
-  uv /= size;
-  mask += circle(vec2(0.), .5, uv);
-  mask -= circle(vec2(-0.2, 0.2), .1, uv);
-  mask -= circle(vec2(0.2), .1, uv);
-  mask -= mouth(vec2(0., -0.1), .3, uv);
-  return mask;
+vec3 floatToRgb(float v, float scale) {
+    float r = v;
+    float g = mod(v*scale,1.0);
+    r-= g/scale;
+    float b = mod(v*scale*scale,1.0);
+    g-=b/scale;
+    return vec3(r,g,b);
 }
 
 void main()
 {
-  vec2 resolution = vec2(256., 256.);
-  vec2 xy = gl_FragCoord.xy - 0.5;
-  vec2 uv = xy/resolution;
-  vec3 uv_rainbow = vec3(uv, 1.);
-  uv -= 0.5;
-  uv.x *= resolution.x/resolution.y;
+    vec2 fragCoord = gl_FragCoord.xy;
+    vec2 iResolution = vec2(256., 256.);
 
-  //float mask = 0.;
-  //mask += smiley(vec2(0.2, 0.), 0.2, uv);
-  //mask += smiley(vec2(-0.2, 0.), 0.2, uv);
+    // get current x and y.
+    fragCoord -= 0.5; // pixel coordinates are given as mid intergers, subtract 0.5 to make it interger.
+    ivec2 center = ivec2(fragCoord);
+    ivec2 res    = ivec2(iResolution) - 1;
 
-  //vec3 black = vec3(0.);
-  //vec3 red = vec3(1., 0., 0.);
-  //vec3 col = black;
-  float image = texture(u_image, uv_rainbow.xy).y;
-  //col = mix(col, image, mask);
-  outColor = vec4(vec3(image), 1.);
+    float pos = texelFetch(u_image, center, 0).y;
+
+    //vec3 col = floatToRgb(pos, 256.);
+    vec3 col = vec3(sigmoid(pos), sin(pos), cos(pos));
+    //vec3 col = vec3(sigmoid(pos));
+
+    fragColor = vec4(col, 1.0);
 }
