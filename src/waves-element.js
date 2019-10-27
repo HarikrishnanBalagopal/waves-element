@@ -1,4 +1,4 @@
-import { LitElement, html } from 'lit-element';
+import { LitElement, html, css } from 'lit-element';
 import vertexShaderSource from './shaders/vertex-shader.vert';
 import fragmentShaderSource from './shaders/fragment-shader.frag';
 import updateShaderSource from './shaders/update-shader.frag';
@@ -250,6 +250,15 @@ function createProgram(gl, vertexShader, fragmentShader)
 
 export class WavesElement extends LitElement
 {
+    static get styles()
+    {
+        return css`
+            /* Selects the host element */
+            :host { display: inline-block;}
+            /* Selects the host element if it is hidden */
+            :host([hidden]) { display: none; }
+        `;
+    }
     constructor()
     {
         super();
