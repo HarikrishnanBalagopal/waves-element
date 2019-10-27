@@ -30,7 +30,7 @@ void main()
     ivec2 center = ivec2(fragCoord);
     ivec2 res    = ivec2(iResolution) - 1;
 
-    float pos = texelFetch(u_image, center, 0).y;
+    float pos = texelFetch(u_image, center, 0).x;
 
     // vec3 col = floatToRgb(pos, 256.);
     vec3 col = vec3(sigmoid(pos), sin(pos), cos(pos));

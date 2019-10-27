@@ -1,6 +1,6 @@
 #version 300 es
 
-precision mediump float;
+precision highp float;
 
 uniform sampler2D i_image;
 uniform bool is_velocity_update;
@@ -14,6 +14,7 @@ out vec4 fragColor;
 #define MASS 10.
 #define FRICTION_COEFF 0.005
 #define PEAK_SIZE .2
+#define MAX_ACCELERATION_MAGNITUDE 1.
 #define MAX_VELOCITY_MAGNITUDE 10.
 #define MAX_DISPLACEMENT 64.
 
@@ -21,6 +22,15 @@ float sigmoid(float x)
 {
     return 1. / (1. + exp(-x));
 }
+
+/*
+float peak(ivec2 center, ivec2 pos, float size)
+{
+    center -= pos;
+    float d = length(vec2(center));
+    return smoothstep(20., 10., d);
+}
+*/
 
 float peak(ivec2 center, ivec2 pos, float size)
 {
@@ -52,24 +62,31 @@ void main()
     ivec2 bottom = center + ivec2( 0, -1);
 
     // get previous z coordinate of current cell and neighbour cells.
-	float pos_c = texelFetch(i_image, center, 0).y;
+	float pos_c = texelFetch(i_image, center, 0).x;
 
-	float pos_l = texelFetch(i_image, left  , 0).y;
-	float pos_t = texelFetch(i_image, top   , 0).y;
-	float pos_r = texelFetch(i_image, right , 0).y;
-	float pos_b = texelFetch(i_image, bottom, 0).y;
+	float pos_l = texelFetch(i_image, left  , 0).x;
+	float pos_t = texelFetch(i_image, top   , 0).x;
+	float pos_r = texelFetch(i_image, right , 0).x;
+	float pos_b = texelFetch(i_image, bottom, 0).x;
 
-    // get previous velocity of current cell.
-	float vel   = texelFetch(i_image, center, 0).x;
-
-    // get 3d positions.
-    vec3 pos_cv = vec3(vec2(center), pos_c);
+    // get previous velocity and previous acceleration of current cell.
+	float vel   = texelFetch(i_image, center, 0).y;
+	float acc   = texelFetch(i_image, center, 0).z;
 
     if(is_velocity_update)
     {
-        // UPDATE VELOCITIES
-        // Channel 0 is previous velocities (x coordinate) and previous positions (y coordinate).
+        // UPDATE 1
 
+        vel = (1. - FRICTION_COEFF) * vel + acc * iTimeDelta * 0.5 * PROP_SPEED;
+        pos_c = pos_c + vel * iTimeDelta * PROP_SPEED;
+    }
+    else
+    {
+        // UPDATE 2
+
+        // get 3d positions.
+        vec3 pos_cv = vec3(vec2(center), pos_c);
+ 
         vec3 pos_lv = vec3(vec2(left  ), pos_l);
         vec3 pos_tv = vec3(vec2(top   ), pos_t);
         vec3 pos_rv = vec3(vec2(right ), pos_r);
@@ -95,35 +112,39 @@ void main()
         vec3 total_force = force_l + force_t + force_r + force_b + force_g;
 
         // calculate acceleration and velocity.
-        float acc = total_force.z / MASS;
-        vel = (1. - FRICTION_COEFF) * vel + acc * iTimeDelta * PROP_SPEED;
-        //vel = (1. - FRICTION_COEFF * screen_center_dist(center)) * vel + acc * iTimeDelta * PROP_SPEED;
+        acc = total_force.z / MASS;
+        vel = (1. - FRICTION_COEFF) * vel + acc * iTimeDelta * 0.5 * PROP_SPEED;
 
-        // clamp velocity.
-        vel = clamp(vel, -MAX_VELOCITY_MAGNITUDE, MAX_VELOCITY_MAGNITUDE);
-
-        // output current velocity and previous position.
-        fragColor = vec4(vel, pos_c, 0., 1.0);
-    }
-    else
-    {
-        // UPDATE POSITIONS
-        // Channel 0 is previous velocities (x coordinate) and previous positions (y coordinate).
-
-        // calculate new position.
-        pos_c = pos_c + vel * iTimeDelta * PROP_SPEED;
-
-        // if LMB is down insert a peak at the click position.
+         // if LMB is down insert a peak at the click position.
         ivec2 click = iMouse.xy;
-        if(iMouse.z == 1)pos_c += 10. * peak(center, click, PEAK_SIZE);
-        // pos_c = 0.;
-
-        // clamp the position.
-        pos_c = clamp(pos_c, -MAX_DISPLACEMENT, MAX_DISPLACEMENT);
-
-        // output current velocity and current position.
-        fragColor = vec4(vel, pos_c, 0., 1.0);
+        if(iMouse.z == 1)pos_c += peak(center, click, PEAK_SIZE);
     }
+
+    // clamp values.
+    // acc = clamp(acc, -MAX_ACCELERATION_MAGNITUDE, MAX_ACCELERATION_MAGNITUDE);
+    if(abs(acc) > MAX_ACCELERATION_MAGNITUDE)acc = 0.;
+    // if(acc < -MAX_ACCELERATION_MAGNITUDE)acc = 0.;
+    // vel = clamp(vel, -MAX_VELOCITY_MAGNITUDE, MAX_VELOCITY_MAGNITUDE);
+    if(abs(vel) > MAX_VELOCITY_MAGNITUDE)vel *= -1.;
+    // if(abs(vel) > MAX_VELOCITY_MAGNITUDE)vel = 0.;
+    // if(vel < -MAX_VELOCITY_MAGNITUDE)vel = 0.;
+    // pos_c = clamp(pos_c, -MAX_DISPLACEMENT, MAX_DISPLACEMENT);
+    if(abs(pos_c) > MAX_DISPLACEMENT)
+    {
+        pos_c = 0.25 * (pos_t + pos_b + pos_l + pos_r);
+    }
+    // if(pos_c < -MAX_DISPLACEMENT)pos_c = 0.;
+    /*
+    if(abs(pos_c) > MAX_DISPLACEMENT || abs(vel) > MAX_VELOCITY_MAGNITUDE || abs(acc) > MAX_ACCELERATION_MAGNITUDE)
+    {
+        pos_c =  clamp(pos_c, -MAX_DISPLACEMENT, MAX_DISPLACEMENT);
+        vel *= -1.;
+        acc = 0.;
+    }
+    */
+
+    // output current velocity and current position.
+    fragColor = vec4(pos_c, vel, acc, 1.0);
 }
 
 /*

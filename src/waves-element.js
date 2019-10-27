@@ -15,16 +15,17 @@ function peak(uv, pos, size)
 function calculate_initial_condition(R, C)
 {
     // The initial condition is a peak at the center of the screen.
-    const arr = new Float32Array(R * C * 2);
+    const element_per_cell = 4;
+    const arr = new Float32Array(R * C * element_per_cell);
     const peak_pos = {x: 0.5, y: 0.5};
     const peak_size = 10;
     for(let r = 1; r < R - 1; r++)
     {
         for(let c = 1; c < C - 1; c++)
         {
-            const i = 2 * (r * C + c);
+            const i = element_per_cell * (r * C + c);
             const uv = {x: (c / R), y: (r/ R)};
-            arr[i + 1] = peak(uv, peak_pos, peak_size); // position
+            arr[i] = peak(uv, peak_pos, peak_size); // 1st element is the position.
         }
     }
     return arr;
@@ -73,7 +74,7 @@ function init(canvas)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-    const mipLevel = 0, internalFormat = gl.RG32F, texWidth = 256, texHeight = 256, texBorder = 0, srcFormat = gl.RG, srcType = gl.FLOAT;
+    const mipLevel = 0, internalFormat = gl.RGBA32F, texWidth = 256, texHeight = 256, texBorder = 0, srcFormat = gl.RGBA, srcType = gl.FLOAT, texNumElements = 4;
     gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, texWidth, texHeight, texBorder, srcFormat, srcType, initial_condition);
 
     // Configure texture 2.
@@ -85,7 +86,7 @@ function init(canvas)
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, texWidth, texHeight, texBorder, srcFormat, srcType, new Float32Array(256 * 256 * 2));
+    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat, texWidth, texHeight, texBorder, srcFormat, srcType, new Float32Array(texWidth * texHeight * texNumElements));
 
     // Create a framebuffer for rendering to texture.
     const attachmentPoint = gl.COLOR_ATTACHMENT0;
@@ -95,6 +96,7 @@ function init(canvas)
 
     // Check framebuffer status and report errors.
     const frameBufferStatus = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    /*
     const statuses = {
         [gl.FRAMEBUFFER_COMPLETE]: 'complete',
         [gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT]: 'incomplete attachment',
@@ -103,7 +105,8 @@ function init(canvas)
         [gl.FRAMEBUFFER_UNSUPPORTED]: 'format of the attachedment is not supported or some other conditions',
         [gl.FRAMEBUFFER_INCOMPLETE_MULTISAMPLE]: 'the values of gl.RENDERBUFFER_SAMPLES are different among different attached renderbuffers or are non zero if attached images are a mix of render buffers and textures'
     };
-    // cout('framebuffer status:', frameBufferStatus, statuses[frameBufferStatus]);
+    cout('framebuffer status:', frameBufferStatus, statuses[frameBufferStatus]);
+    */
     if(frameBufferStatus != gl.FRAMEBUFFER_COMPLETE)
     {
         alert('Failed to create a framebuffer!!');
