@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "parcel index.html",
     "prebuild": "rmdir dist /s /q",
-    "build": "parcel build index.html",
+    "build": "parcel build index.html --public-url .",
     "deploy": "gh-pages -d dist"
   },
   "browserslist": [
@@ -15,7 +15,7 @@
   ],
   "keywords": [],
   "author": "Harikrishnan Balagopal",
-  "license": "ISC",
+  "license": "GPL-3.0",
   "devDependencies": {
     "gh-pages": "^2.1.1",
     "glslify-bundle": "^5.1.1",
