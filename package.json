@@ -1,5 +1,5 @@
 {
-  "name": "waves-element.js",
+  "name": "@haribala/waves-element.js",
   "module": "waves-element.js",
   "version": "1.0.0",
   "description": "Interactive wave simulation using WebGL2.",
@@ -10,12 +10,26 @@
     "build": "parcel build index.html --public-url .",
     "deploy": "gh-pages -d dist"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HarikrishnanBalagopal/waves-element.git"
+  },
   "browserslist": [
     "> 5%"
   ],
-  "keywords": [],
+  "keywords": [
+    "webgl",
+    "webgl2",
+    "waves",
+    "physics",
+    "webcomponent"
+  ],
   "author": "Harikrishnan Balagopal",
   "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/HarikrishnanBalagopal/waves-element/issues"
+  },
+  "homepage": "https://github.com/HarikrishnanBalagopal/waves-element#readme",
   "devDependencies": {
     "gh-pages": "^2.1.1",
     "glslify-bundle": "^5.1.1",
