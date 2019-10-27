@@ -51,7 +51,7 @@ void main()
 
     // if it is a boundary cell velocity is 0.
     // if(center.x == 0 || center.y == 0 || center.x == res.x || center.y == res.y)
-    if(center.x == 0 || center.y == 0 || center.x == res.x || center.y == res.y || center.x % 4 == 0)
+    if(center.x == 0 || center.y == 0 || center.x == res.x || center.y == res.y || (center.x * center.x) % 7 == 0 || (center.x + center.y) % 7 == 0)
     {
         fragColor = vec4(vec3(0.), 1.0);
         return;
