@@ -1,9 +1,9 @@
+import { LitElement, html } from 'lit-element';
 import vertexShaderSource from './shaders/vertex-shader.vert';
 import fragmentShaderSource from './shaders/fragment-shader.frag';
 import updateShaderSource from './shaders/update-shader.frag';
 
 const cout = console.log.bind(console);
-const sel = document.querySelector.bind(document);
 
 function peak(uv, pos, size)
 {
@@ -30,11 +30,10 @@ function calculate_initial_condition(R, C)
     return arr;
 }
 
-function init()
+function init(canvas)
 {
     const initial_condition = calculate_initial_condition(256, 256);
 
-    const canvas = sel('#webgl-canvas');
     const gl = canvas.getContext('webgl2');
 
     if (!gl) {
@@ -104,7 +103,7 @@ function init()
         [gl.FRAMEBUFFER_UNSUPPORTED]: 'format of the attachedment is not supported or some other conditions',
         [gl.FRAMEBUFFER_INCOMPLETE_MULTISAMPLE]: 'the values of gl.RENDERBUFFER_SAMPLES are different among different attached renderbuffers or are non zero if attached images are a mix of render buffers and textures'
     };
-    cout('framebuffer status:', frameBufferStatus, statuses[frameBufferStatus]);
+    // cout('framebuffer status:', frameBufferStatus, statuses[frameBufferStatus]);
     if(frameBufferStatus != gl.FRAMEBUFFER_COMPLETE)
     {
         alert('Failed to create a framebuffer!!');
@@ -152,10 +151,12 @@ function init()
             // cout(mouseData.mouse_x, mouseData.mouse_y, mouseData.mouse_updated);    
         }
     });
-    canvas.addEventListener('mouseup', e => {
+    canvas.addEventListener('mouseup', () => {
         mouseData.is_dragging = false;
     });
-
+    canvas.addEventListener('mouseleave', () => {
+        mouseData.is_dragging = false;
+    });
     // Arguments passed to update step.
     const args = {
         gl, program, attachmentPoint, updateProgram, vao, iMouseLocation, iTimeDeltaLocation, isVelocityUpdateLocation, imageLocation, updateImageLocation, frameBuffer, texture1, texture2, prev: 0, mouseData
@@ -247,9 +248,26 @@ function createProgram(gl, vertexShader, fragmentShader)
     gl.deleteProgram(program);
 }
 
-function main()
+export class WavesElement extends LitElement
 {
-    init();
+    constructor()
+    {
+        super();
+        this.setupCanvas();
+    }
+    async setupCanvas()
+    {
+        await this.updateComplete;
+
+        const canvas = this.shadowRoot.getElementById('webgl-canvas');
+        init(canvas);
+    }
+    render()
+    {
+        return html`
+            <canvas id="webgl-canvas" width="256" height="256"></canvas>
+        `;
+    }
 }
 
-main();
+customElements.define('waves-element', WavesElement);
