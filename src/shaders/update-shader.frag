@@ -9,11 +9,11 @@ uniform ivec3 iMouse;
 
 out vec4 fragColor;
 
-#define SPRING_CONSTANT .04
+#define SPRING_CONSTANT .01
 #define PROP_SPEED 1.
 #define MASS 10.
 #define FRICTION_COEFF 0.005
-#define PEAK_SIZE .2
+#define PEAK_SIZE .05
 #define MAX_ACCELERATION_MAGNITUDE 1.
 #define MAX_VELOCITY_MAGNITUDE 10.
 #define MAX_DISPLACEMENT 64.
@@ -49,9 +49,8 @@ void main()
     ivec2 center = ivec2(fragCoord);
     ivec2 res    = ivec2(iResolution) - 1;
 
-    // if it is a boundary cell velocity is 0.
-    // if(center.x == 0 || center.y == 0 || center.x == res.x || center.y == res.y)
-    if(center.x == 0 || center.y == 0 || center.x == res.x || center.y == res.y || (center.x * center.x) % 7 == 0 || (center.x + center.y) % 7 == 0)
+    // if it is a boundary cell set everything to 0.
+    if(center.x == 0 || center.y == 0 || center.x == res.x || center.y == res.y)
     {
         fragColor = vec4(vec3(0.), 1.0);
         return;
@@ -62,17 +61,23 @@ void main()
     ivec2 right  = center + ivec2( 1,  0);
     ivec2 bottom = center + ivec2( 0, -1);
 
-    // get previous z coordinate of current cell and neighbour cells.
-	float pos_c = texelFetch(i_image, center, 0).x;
+    // get data of center and neighbouring cells.
+	vec3 data_c = texelFetch(i_image, center, 0).xyz;
 
-	float pos_l = texelFetch(i_image, left  , 0).x;
-	float pos_t = texelFetch(i_image, top   , 0).x;
-	float pos_r = texelFetch(i_image, right , 0).x;
-	float pos_b = texelFetch(i_image, bottom, 0).x;
+	vec3 data_l = texelFetch(i_image, left  , 0).xyz;
+	vec3 data_t = texelFetch(i_image, top   , 0).xyz;
+	vec3 data_r = texelFetch(i_image, right , 0).xyz;
+	vec3 data_b = texelFetch(i_image, bottom, 0).xyz;
 
-    // get previous velocity and previous acceleration of current cell.
-	float vel   = texelFetch(i_image, center, 0).y;
-	float acc   = texelFetch(i_image, center, 0).z;
+    float pos_c = data_c.x;
+
+    float pos_l = data_l.x;
+    float pos_t = data_t.x;
+    float pos_r = data_r.x;
+    float pos_b = data_b.x;
+
+    float vel = data_c.y;
+    float acc = data_c.z;
 
     if(is_velocity_update)
     {
@@ -80,6 +85,8 @@ void main()
 
         vel = (1. - FRICTION_COEFF) * vel + acc * iTimeDelta * 0.5 * PROP_SPEED;
         pos_c = pos_c + vel * iTimeDelta * PROP_SPEED;
+
+        data_c = vec3(pos_c, vel, acc);
     }
     else
     {
@@ -119,23 +126,29 @@ void main()
          // if LMB is down insert a peak at the click position.
         ivec2 click = iMouse.xy;
         if(iMouse.z == 1)pos_c += peak(center, click, PEAK_SIZE);
+
+        data_c = vec3(pos_c, vel, acc);
+
+        data_c = 0.25 * (data_c + data_l + data_r + data_t + data_b);
     }
 
     // clamp values.
+    vec3 bounds = vec3(MAX_DISPLACEMENT, MAX_VELOCITY_MAGNITUDE, MAX_ACCELERATION_MAGNITUDE);
+    data_c = clamp(data_c, -bounds, bounds);
     // acc = clamp(acc, -MAX_ACCELERATION_MAGNITUDE, MAX_ACCELERATION_MAGNITUDE);
-    if(abs(acc) > MAX_ACCELERATION_MAGNITUDE)acc = 0.;
+    // if(abs(acc) > MAX_ACCELERATION_MAGNITUDE)acc = 0.;
     // if(acc < -MAX_ACCELERATION_MAGNITUDE)acc = 0.;
     // vel = clamp(vel, -MAX_VELOCITY_MAGNITUDE, MAX_VELOCITY_MAGNITUDE);
-    if(abs(vel) > MAX_VELOCITY_MAGNITUDE)vel *= -1.;
+    // if(abs(vel) > MAX_VELOCITY_MAGNITUDE)vel *= -1.;
     // if(abs(vel) > MAX_VELOCITY_MAGNITUDE)vel = 0.;
     // if(vel < -MAX_VELOCITY_MAGNITUDE)vel = 0.;
     // pos_c = clamp(pos_c, -MAX_DISPLACEMENT, MAX_DISPLACEMENT);
+    /*
     if(abs(pos_c) > MAX_DISPLACEMENT)
     {
         pos_c = 0.25 * (pos_t + pos_b + pos_l + pos_r);
     }
     // if(pos_c < -MAX_DISPLACEMENT)pos_c = 0.;
-    /*
     if(abs(pos_c) > MAX_DISPLACEMENT || abs(vel) > MAX_VELOCITY_MAGNITUDE || abs(acc) > MAX_ACCELERATION_MAGNITUDE)
     {
         pos_c =  clamp(pos_c, -MAX_DISPLACEMENT, MAX_DISPLACEMENT);
@@ -145,7 +158,7 @@ void main()
     */
 
     // output current velocity and current position.
-    fragColor = vec4(pos_c, vel, acc, 1.0);
+    fragColor = vec4(data_c, 1.0);
 }
 
 /*
