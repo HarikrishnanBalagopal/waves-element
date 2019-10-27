@@ -1,7 +1,7 @@
 {
   "name": "@haribala/waves-element",
   "module": "./src/waves-element.js",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Interactive wave simulation using WebGL2.",
   "main": "./src/waves-element.js",
   "scripts": {

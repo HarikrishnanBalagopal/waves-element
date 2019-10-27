@@ -128,8 +128,9 @@ void main()
         if(iMouse.z == 1)pos_c += peak(center, click, PEAK_SIZE);
 
         data_c = vec3(pos_c, vel, acc);
+        data_c.x -= sin(pos_c / 100.);
 
-        data_c = 0.25 * (data_c + data_l + data_r + data_t + data_b);
+        // data_c = 0.2 * (data_c + data_l + data_r + data_t + data_b);
     }
 
     // clamp values.
