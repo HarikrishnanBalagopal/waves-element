@@ -1,9 +1,9 @@
 {
-  "name": "@haribala/waves-element.js",
-  "module": "waves-element.js",
+  "name": "@haribala/waves-element",
+  "module": "./src/waves-element.js",
   "version": "1.0.0",
   "description": "Interactive wave simulation using WebGL2.",
-  "main": "waves-element.js",
+  "main": "./src/waves-element.js",
   "scripts": {
     "dev": "parcel index.html",
     "prebuild": "rmdir dist /s /q",
